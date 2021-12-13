@@ -28,6 +28,7 @@ use Rebing\GraphQL\Support\Contracts\ConfigConvertible;
 use Rebing\GraphQL\Support\Contracts\TypeConvertible;
 use Rebing\GraphQL\Support\ExecutionMiddleware\GraphqlExecutionMiddleware;
 use Rebing\GraphQL\Support\Field;
+use Rebing\GraphQL\Support\GraphQLFederation\Federation;
 use Rebing\GraphQL\Support\OperationParams;
 use Rebing\GraphQL\Support\PaginationType;
 use Rebing\GraphQL\Support\SimplePaginationType;
@@ -150,6 +151,11 @@ class GraphQL
      */
     protected function executeViaMiddleware(array $middleware, string $schemaName, Schema $schema, OperationParams $params, $rootValue = null, $contextValue = null): ExecutionResult
     {
+        // These 3 lines were added by me.
+        $federation = new Federation();
+        $schema = $federation->extendSchema($schema);
+        $rootValue = $federation->addResolversToRootValue($rootValue ?? []);
+
         return $this->app->make(Pipeline::class)
             ->send([$schemaName, $schema, $params, $rootValue, $contextValue])
             ->through($middleware)
