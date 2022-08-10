@@ -1,8 +1,37 @@
 CHANGELOG
 =========
 
-[Next release](https://github.com/rebing/graphql-laravel/compare/8.0.0...master)
+[Next release](https://github.com/rebing/graphql-laravel/compare/8.3.0...master)
 --------------
+
+2022-06-11, 8.3.0
+-----------------
+### Added
+- Add support to use array in `controller` param in config [\#906 / viktorruskai](https://github.com/rebing/graphql-laravel/pull/906)
+- Add support for laravel validation attributes [\#901 / jacobdekeizer](https://github.com/rebing/graphql-laravel/pull/901)
+
+### Fixed
+- Allow 'always' to work on object types [\#473 / tinyoverflow \#369 / zjbarg](https://github.com/rebing/graphql-laravel/pull/892)
+- Allow using addSelect() in relationship query scopes [\#875 / codercms](https://github.com/rebing/graphql-laravel/pull/806)
+
+### Removed
+- Support for PHP 7.2, PHP 7.3 and Laravel 7.0 (all EOL) [\#914 / mfn](https://github.com/rebing/graphql-laravel/pull/914)
+
+2022-01-30, 8.2.1
+-----------------
+### Fixed
+- Fix schema parsing issue when route prefix is empty string [\#890 / hello-liang-shan](https://github.com/rebing/graphql-laravel/pull/890)\
+  Note: this is a follow-up fix to #888
+
+2022-01-27, 8.2.0
+-----------------
+### Fixed
+- Fix "No configuration for schema '' found" when route prefix is empty string [\#888 / hello-liang-shan](https://github.com/rebing/graphql-laravel/pull/888)
+
+2022-01-15, 8.1.0
+-----------------
+### Added
+- Support for Laravel 9 [\#879 / mfn](https://github.com/rebing/graphql-laravel/pull/879)
 
 2021-11-15, 8.0.0
 -----------------

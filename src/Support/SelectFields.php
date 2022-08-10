@@ -102,7 +102,7 @@ class SelectFields
                 $query = $customQuery($requestedFields['args'], $query, $ctx) ?? $query;
             }
 
-            $query->select($select);
+            $query->addSelect($select);
             $query->with($with);
         };
     }
@@ -247,10 +247,8 @@ class SelectFields
                 $fieldObject->resolveFn = function (): void {
                 };
             }
-            // If allowed field, but not selectable
-            elseif (false === $canSelect) {
-                static::addAlwaysFields($fieldObject, $select, $parentTable);
-            }
+
+            static::addAlwaysFields($fieldObject, $select, $parentTable);
         }
 
         // If parent type is an union or interface we select all fields
@@ -324,7 +322,7 @@ class SelectFields
                     }
 
                     break;
-                // If Privacy class given
+                    // If Privacy class given
                 case \is_string($privacyClass):
                     /** @var Privacy $instance */
                     $instance = app($privacyClass);

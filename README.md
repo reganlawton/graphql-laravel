@@ -6,7 +6,7 @@
 [![Downloads](https://img.shields.io/packagist/dt/rebing/graphql-laravel.svg?style=flat-square)](https://packagist.org/packages/rebing/graphql-laravel)
 [![Get on Slack](https://img.shields.io/badge/slack-join-orange.svg)](https://join.slack.com/t/rebing-graphql/shared_invite/enQtNTE5NjQzNDI5MzQ4LTdhNjk0ZGY1N2U1YjE4MGVlYmM2YTc2YjQ0MmIwODY5MWMwZWIwYmY1MWY4NTZjY2Q5MzdmM2Q3NTEyNDYzZjc)
 
-Use Facebook's GraphQL with Laravel 6.0+. It is based on the [PHP port of GraphQL reference implementation](https://github.com/webonyx/graphql-php). You can find more information about GraphQL in the [GraphQL Introduction](https://reactjs.org/blog/2015/05/01/graphql-introduction.html) on the [React](https://reactjs.org/) blog or you can read the [GraphQL specifications](https://spec.graphql.org/).
+Use Facebook's GraphQL with PHP 7.4+ on Laravel 6.0 & 8.0+. It is based on the [PHP port of GraphQL reference implementation](https://github.com/webonyx/graphql-php). You can find more information about GraphQL in the [GraphQL Introduction](https://reactjs.org/blog/2015/05/01/graphql-introduction.html) on the [React](https://reactjs.org/) blog or you can read the [GraphQL specifications](https://spec.graphql.org/).
 
 * Allows creating **queries** and **mutations** as request endpoints
 * Supports multiple schemas
@@ -48,7 +48,7 @@ composer require rebing/graphql-laravel
 
 Publish the configuration file:
 ```bash
-$ php artisan vendor:publish --provider="Rebing\GraphQL\GraphQLServiceProvider"
+php artisan vendor:publish --provider="Rebing\GraphQL\GraphQLServiceProvider"
 ```
 
 Review the configuration file:
@@ -62,23 +62,33 @@ The default GraphiQL view makes use of the global `csrf_token()` helper function
 
 - [Laravel GraphQL](#laravel-graphql)
   - [Installation](#installation)
-      - [Dependencies:](#dependencies)
-      - [Installation:](#installation)
-        - [Laravel 6.0+](#laravel)
+    - [Dependencies:](#dependencies)
+    - [Installation:](#installation-1)
+      - [Laravel](#laravel)
   - [Usage](#usage)
     - [Concepts](#concepts)
       - [A word on declaring a field `nonNull`](#a-word-on-declaring-a-field-nonnull)
     - [Data loading](#data-loading)
     - [GraphiQL](#graphiql)
     - [Middleware Overview](#middleware-overview)
+      - [HTTP middleware](#http-middleware)
+      - [GraphQL execution middleware](#graphql-execution-middleware)
+      - [GraphQL resolver middleware](#graphql-resolver-middleware)
     - [Schemas](#schemas)
+      - [Schema classes](#schema-classes)
     - [Creating a query](#creating-a-query)
     - [Creating a mutation](#creating-a-mutation)
-      - [Adding validation to a mutation](#adding-validation-to-a-mutation)
       - [File uploads](#file-uploads)
-    - [Validation](#validation)  
+        - [Vue.js and Axios example](#vuejs-and-axios-example)
+        - [jQuery or vanilla javascript](#jquery-or-vanilla-javascript)
+    - [Validation](#validation)
+      - [Example defining rules in each argument](#example-defining-rules-in-each-argument)
+      - [Example using the `rules()` method](#example-using-the-rules-method)
+      - [Example using Laravel's validator directly](#example-using-laravels-validator-directly)
       - [Handling validation errors](#handling-validation-errors)
       - [Customizing error messages](#customizing-error-messages)
+      - [Customizing attributes](#customizing-attributes)
+      - [Misc notes](#misc-notes)
     - [Resolve method](#resolve-method)
     - [Resolver middleware](#resolver-middleware)
       - [Defining middleware](#defining-middleware)
@@ -97,6 +107,7 @@ The default GraphiQL view makes use of the global `csrf_token()` helper function
     - [Enums](#enums)
     - [Unions](#unions)
     - [Interfaces](#interfaces)
+      - [Supporting custom queries on interface relations](#supporting-custom-queries-on-interface-relations)
       - [Sharing interface fields](#sharing-interface-fields)
     - [Input Object](#input-object)
     - [Type modifiers](#type-modifiers)
@@ -105,8 +116,11 @@ The default GraphiQL view makes use of the global `csrf_token()` helper function
     - [Field deprecation](#field-deprecation)
     - [Default field resolver](#default-field-resolver)
     - [Macros](#macros)
-    - [Automatic Persisted Queries support](#automatic-persisted-queries-support) 
-    - [Misc features](#misc-features)
+    - [Automatic Persisted Queries support](#automatic-persisted-queries-support)
+      - [Notes](#notes)
+      - [Client example](#client-example)
+  - [Misc features](#misc-features)
+    - [Detecting unused variables](#detecting-unused-variables)
   - [Configuration options](#configuration-options)
   - [Guides](#guides)
     - [Upgrading from v1 to v2](#upgrading-from-v1-to-v2)
@@ -557,8 +571,8 @@ class UpdateUserPasswordMutation extends Mutation
     public function args(): array
     {
         return [
-            'id' => ['
-                name' => 'id', 
+            'id' => [
+                'name' => 'id', 
                 'type' => Type::nonNull(Type::string()),
             ],
             'password' => [
@@ -976,6 +990,21 @@ public function validationErrorMessages(array $args = []): array
         'email.required' => 'Please enter your email address',
         'email.email' => 'Please enter a valid email address',
         'email.exists' => 'Sorry, this email address is already in use',
+    ];
+}
+```
+
+#### Customizing attributes
+
+The validation attributes can be customised by overriding the
+`validationAttributes` method. This method should return an array of custom
+attributes in the same way documented by Laravel's validation.
+
+```php
+public function validationAttributes(array $args = []): array
+{
+    return [
+        'email' => 'email address',
     ];
 }
 ```
@@ -1789,7 +1818,8 @@ class UserType extends GraphQLType
                 // $ctx is the GraphQL context (can be customized by overriding `\Rebing\GraphQL\GraphQLController::queryContext`
                 // The return value should be the query builder or void
                 'query'         => function (array $args, $query, $ctx): void {
-                    $query->where('posts.created_at', '>', $args['date_from']);
+                    $query->addSelect('some_column')
+                          ->where('posts.created_at', '>', $args['date_from']);
                 }
             ]
         ];
@@ -2655,7 +2685,7 @@ To prevent such scenarios, you can add the `UnusedVariablesMiddleware` to your
     The default makes the API available via `/graphql`
   - `controller`\
     Allows overriding the default controller class, in case you want to extend or
-    replace the existing one.
+    replace the existing one (also supports `array` format).
   - `middleware`\
     Global GraphQL middleware applying in case no schema-specific middleware was
     provided
